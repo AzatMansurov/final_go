@@ -3,7 +3,6 @@ package bot
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -24,51 +23,46 @@ type UpgradeBot struct {
 	Users *models.UserModel
 }
 
-func CreateBot() UpgradeBot {
-
+func CreateBot() (upgradeBot UpgradeBot) {
 	db, err := gorm.Open(mysql.Open("root:yes@tcp(localhost:3306)/go?parseTime=True&loc=Local"), &gorm.Config{})
+
 	if err != nil {
 		log.Fatalf("Data base connecting error %v", err)
 	}
 
 	token := "5777491063:AAFlxsonvdC4YkPicvlx5n0NPlztVJ7mGdY"
 
-	upgradeBot := UpgradeBot{
+	upgradeBot = UpgradeBot{
 		Bot:   InitBot(token),
 		Users: &models.UserModel{Db: db},
 	}
 
-	return upgradeBot
+	return
 }
 
-func hello(w http.ResponseWriter, r *http.Request) {
-
-	body_byte, err := ioutil.ReadAll(r.Body)
+func hello(_ http.ResponseWriter, r *http.Request) {
+	bodyByte, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Fatalf("Body reading error: %v", err)
 	}
 
-	body_string := string(body_byte)
+	bodyString := string(bodyByte)
+	bodyTrimmed := strings.TrimPrefix(bodyString, "text=")
 
-	body_trimmed := strings.TrimPrefix(body_string, "text=")
-
-	body_decoded, err := url.QueryUnescape(body_trimmed)
+	bodyDecoded, err := url.QueryUnescape(bodyTrimmed)
 	if err != nil {
 		log.Fatalf("Body decoding error: %v", err)
 	}
 
-	fmt.Println(body_decoded)
-
 	upgradeBot := CreateBot()
-	upgradeBot.SendAll(body_decoded)
+	upgradeBot.SendAll(bodyDecoded)
 }
 
-func send(chat_id int, text string) {
-
-	chat_str := strconv.Itoa(chat_id)
+func send(chatId int, text string) {
+	chatStr := strconv.Itoa(chatId)
 
 	postBody, _ := json.Marshal(map[string]string{
-		"chat_id": chat_str,
+		"chat_id": chatStr,
 		"text":    text,
 	})
 	responseBody := bytes.NewBuffer(postBody)
@@ -79,18 +73,20 @@ func send(chat_id int, text string) {
 	if err != nil {
 		log.Fatalf("Request sending error to Telegram: %v", err)
 	}
+
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalf("Body reading error: %v", err)
 	}
+
 	sb := string(body)
+
 	log.Println(sb)
 }
 
 func (bot *UpgradeBot) SendAll(text string) {
-
 	usersId, err := bot.Users.FindAll()
 
 	if err != nil {
@@ -146,5 +142,9 @@ func InitBot(token string) *telebot.Bot {
 
 func Listen() {
 	http.HandleFunc("/", hello)
-	http.ListenAndServe(":8090", nil)
+
+	err := http.ListenAndServe(":8090", nil)
+	if err != nil {
+		return
+	}
 }

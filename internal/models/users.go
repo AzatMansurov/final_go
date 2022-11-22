@@ -18,10 +18,7 @@ type UserModel struct {
 }
 
 func (m *UserModel) Create(user User) error {
-
-	result := m.Db.Create(&user)
-
-	return result.Error
+	return m.Db.Create(&user).Error
 }
 
 func (m *UserModel) FindOne(telegramId int64) (*User, error) {
@@ -37,8 +34,10 @@ func (m *UserModel) FindOne(telegramId int64) (*User, error) {
 }
 
 func (m *UserModel) FindAll() ([]int, error) {
-	allUsers := []User{}
-	var usersId []int
+	var (
+		allUsers []User
+		usersId  []int
+	)
 
 	result := m.Db.Select("chat_id").Find(&allUsers)
 
