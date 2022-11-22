@@ -121,7 +121,7 @@ func (bot *UpgradeBot) StartHandler(ctx telebot.Context) error {
 		}
 	}
 
-	return ctx.Send("Hello, " + ctx.Sender().FirstName)
+	return ctx.Send("Привет, " + ctx.Sender().FirstName + ". Вы успешно подписались на наш бот.\nВ дальнейшем будете получать от нас сообщения")
 }
 
 func InitBot(token string) *telebot.Bot {
